@@ -1,0 +1,60 @@
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  terraformVersion: '1.0.3'
+
+stages:
+- stage: DeployAndTest
+  jobs:
+  - job: DeployAndTest
+    steps:
+    - script: echo "Deploying..."
+      displayName: 'Deploy'
+
+    - script: |
+        curl -Ls https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip -o terraform.zip
+        unzip terraform.zip
+        sudo mv terraform /usr/local/bin/
+      displayName: 'Install Terraform'
+
+    - script: |
+        az login --service-principal -u $(AZURE_CLIENT_ID) -p $(AZURE_CLIENT_SECRET) --tenant $(AZURE_TENANT_ID)
+        cd terraform
+        terraform init
+        terraform plan
+        terraform apply -auto-approve
+      env:
+        AZURE_CLIENT_ID: $(AZURE_CLIENT_ID)
+        AZURE_CLIENT_SECRET: $(AZURE_CLIENT_SECRET)
+        AZURE_TENANT_ID: $(AZURE_TENANT_ID)
+      displayName: 'Deploy to Azure with Terraform'
+
+    # Testing Steps
+    - script: |
+        az storage blob show --name index.html --container-name website --account-name $(STORAGE_ACCOUNT_NAME) > /dev/null
+        if [ $? -ne 0 ]; then
+          echo "Blob does not exist."
+          exit 1
+        fi
+      displayName: 'Verify Blob Exists'
+      env:
+        STORAGE_ACCOUNT_NAME: $(STORAGE_ACCOUNT_NAME)
+
+    - script: |
+        response=$(curl -s "https://$(STORAGE_ACCOUNT_NAME).blob.core.windows.net/website/index.html")
+        status_code=$(curl -s -o /dev/null -w "%{http_code}" "https://$(STORAGE_ACCOUNT_NAME).blob.core.windows.net/website/index.html")
+        if [ "$status_code" != "200" ]; then
+          echo "Site not accessible. HTTP status code: $status_code"
+          exit 1
+        fi
+        if [[ ! "$response" == *"Hello, World!"* ]]; then
+          echo "The content 'Hello, World!' not found in the website"
+          exit 1
+        fi
+      displayName: 'Verify Website Accessibility and Content'
+      env:
+        STORAGE_ACCOUNT_NAME: $(STORAGE_ACCOUNT_NAME)

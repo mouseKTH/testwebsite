@@ -1,0 +1,49 @@
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  webAppName: 'myAppService'
+  terraformVersion: '0.14.9'
+
+stages:
+- stage: DeployAndTest
+  jobs:
+  - job: Deploy
+    steps:
+    # Installing Terraform
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformInstaller@0
+      inputs:
+        terraformVersion: $(terraformVersion)
+
+    # Installing Azure CLI (though it's likely available on the hosted agent by default)
+    - script: |
+        sudo apt-get update
+        sudo apt-get install azure-cli
+      displayName: 'Install Azure CLI'
+
+    # Terraform init and apply
+    - script: |
+        cd terraform
+        terraform init
+        terraform apply -auto-approve
+      displayName: 'Terraform Apply'
+
+    # Static Code Analysis with HTMLHint
+    - script: |
+        npm install -g htmlhint
+        htmlhint website/index.html
+      displayName: 'Static Code Analysis with HTMLHint'
+
+    # Deployment Tests
+    - script: |
+        response=$(curl -s http://$(webAppName).azurewebsites.net)
+        if [[ $response == *'Goodbye, World!'* ]]; then
+          echo "Website deployed correctly."
+        else
+          echo "Deployment failed. 'Goodbye, World!' not found."
+          exit 1
+        fi
+      displayName: 'Deployment Tests'

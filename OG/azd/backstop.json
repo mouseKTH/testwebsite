@@ -1,0 +1,32 @@
+{
+    "id": "backstop_default",
+    "viewports": [
+      {
+        "label": "desktop",
+        "width": 1920,
+        "height": 1080
+      }
+    ],
+    "scenarios": [
+      {
+        "label": "Goodbye World Page",
+        "url": "http://yourwebsiteurl.com",
+        "referenceUrl": "",
+        "readyEvent": null,
+        "readySelector": "body",
+        "delay": 0,
+        "hideSelectors": [],
+        "removeSelectors": [],
+        "hoverSelector": "",
+        "clickSelector": "",
+        "postInteractionWait": 0,
+        "selectors": ["body"],
+        "selectorExpansion": true,
+        "expect": 0,
+        "misMatchThreshold" : 0.1,
+        "requireSameDimensions": true
+      }
+    ],
+    ...
+  }
+  
