@@ -22,7 +22,7 @@ Set up the Service Principal in Azure and provide its AZURE_CLIENT_ID, AZURE_CLI
 Run the pipeline.
 This pipeline will set up a static website hosted in an Azure Blob Storage and will print the website URL as an output.
 
-yml config:
+<!-- yml config:
 trigger:
 - master
 
@@ -50,4 +50,4 @@ stages:
         curl -s $(websiteUrl) | grep "Hello, World!"
       env:
         websiteUrl: $(terraform output website_url)
-      displayName: 'Test Website'
+      displayName: 'Test Website' -->
